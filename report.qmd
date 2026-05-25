@@ -1,0 +1,76 @@
+---
+title: "Replicating Do Markets Reduce Costs?"
+author: "Matteo"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    theme: cosmo
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Introduction
+
+This report replicates selected results from Fabrizio, Rose, and Wolfram (2007), "Do Markets Reduce Costs? Assessing the Impact of Regulatory Restructuring on US Electric Generation Efficiency."
+
+The goal is to reproduce Figures 1 and 2 and Tables 3, 4, and 5 using Julia.
+
+# Paper And Research Question
+
+The paper studies whether electricity market restructuring improved technical efficiency at US electric generating plants.
+
+The core question is whether plants exposed to market-oriented restructuring reduced input use, conditional on output and plant characteristics.
+
+# Replication Targets
+
+The replication focuses on:
+
+- Figure 1: labor input demand year effects by regulatory status
+- Figure 2: nonfuel expense input demand year effects by regulatory status
+- Table 3: labor input demand estimates
+- Table 4: nonfuel expense input demand estimates
+- Table 5: fuel input demand estimates
+
+# Data
+
+The original replication package is available from openICPSR:
+
+<https://www.openicpsr.org/openicpsr/project/116286/version/V1/view>
+
+Raw data files are stored in `data/raw/`. These files are not edited directly.
+
+# Empirical Strategy
+
+The paper estimates input demand equations with plant-epoch fixed effects and year fixed effects. The main dependent variables are labor, nonfuel expenses, and fuel use.
+
+Some specifications instrument plant output using state electricity sales.
+
+# Julia Implementation
+
+This section will describe how the original Stata replication code was translated into Julia.
+
+# Results
+
+## Figure 1
+
+To be added.
+
+## Figure 2
+
+To be added.
+
+## Tables 3, 4, And 5
+
+To be added.
+
+# Discussion
+
+This section will compare the Julia results with the published results and explain any differences.
+
+# Conclusion
+
+To be added.
