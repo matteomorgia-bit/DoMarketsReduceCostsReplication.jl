@@ -1,19 +1,7 @@
-using DataFrames
-using StatFiles
-
-const RAW_DIR = joinpath("data", "raw", "openicpsr", "116286-V1")
-
-function load_stata_file(filename)
-    path = joinpath(RAW_DIR, filename)
-    return DataFrame(load(path))
-end
-
-function count_plant_epochs(df)
-    return length(unique(df.plant_num2))
-end
+using DoMarketsReduceCostsReplication
 
 function print_dataset_summary(filename)
-    df = load_stata_file(filename)
+    df = load_frw_data(filename)
 
     println("Dataset: ", filename)
     println("Observations: ", nrow(df))

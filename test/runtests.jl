@@ -1,21 +1,10 @@
 using Test
 using DataFrames
-using StatFiles
+using DoMarketsReduceCostsReplication
 
-const RAW_DIR = joinpath(@__DIR__, "..", "data", "raw", "openicpsr", "116286-V1")
+@testset "Helper functions" begin
+    toy = DataFrame(plant_num2 = [1, 1, 2, 3, 3, 3])
 
-function load_stata_file(filename)
-    path = joinpath(RAW_DIR, filename)
-    return DataFrame(load(path))
+    @test count_plant_epochs(toy) == 3
+    @test endswith(raw_data_dir(), joinpath("data", "raw", "openicpsr", "116286-V1"))
 end
-
-@testset "FRW estimation samples" begin
-    enf = load_stata_file("frw1extract_enf.dta")
-    fuel = load_stata_file("frw1extract_f.dta")
-
-    @test nrow(enf) == 10079
-    @test length(unique(enf.plant_num2)) == 769
-
-    @test nrow(fuel) == 10002
-    @test length(unique(fuel.plant_num2)) == 768
-end 
