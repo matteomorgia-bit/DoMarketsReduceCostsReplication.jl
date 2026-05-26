@@ -22,3 +22,15 @@ end
     @test prepared.diff == [false, true, false, false, true]
     @test prepared.iounug == [0, 0, 0, 0, 0]
 end
+
+@testset "Prais transform" begin
+    x = [10.0, 12.0, 20.0]
+    diff = [false, true, false]
+    rho = 0.5
+
+    transformed = prais_transform(x, diff, rho)
+
+    @test transformed[1] ≈ sqrt(1 - rho^2) * 10.0
+    @test transformed[2] ≈ 12.0 - rho * 10.0
+    @test transformed[3] ≈ sqrt(1 - rho^2) * 20.0
+end

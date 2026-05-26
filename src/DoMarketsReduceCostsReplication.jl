@@ -3,7 +3,7 @@ module DoMarketsReduceCostsReplication
 using DataFrames
 using StatFiles
 
-export raw_data_dir, load_frw_data, count_plant_epochs, prepare_input_data
+export raw_data_dir, load_frw_data, count_plant_epochs, prepare_input_data, prais_transform
 
 """
     raw_data_dir()
@@ -57,4 +57,29 @@ function prepare_input_data(df)
 
     return out
 end
+
+"""
+    prais_transform(x, diff, rho)
+
+Apply the Prais-Winsten quasi-difference used in `praisiv2.do`.
+
+For consecutive observations within a plant epoch, the transformed value is
+`x[t] - rho * x[t-1]`. For first observations and gaps, the transformed value is
+`sqrt(1-rho^2) * x[t]`.
+"""
+function prais_transform(x, diff, rho)
+    transformed = similar(x, Float64)
+    first_weight = sqrt(1 - rho^2)
+
+    for i in eachindex(x)
+        if diff[i]
+            transformed[i] = x[i] - rho * x[i - 1]
+        else
+            transformed[i] = first_weight * x[i]
+        end
+    end
+
+    return transformed
+end
+
 end
