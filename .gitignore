@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Raw and processed data
+data/raw/
+data/processed/
+
+# Generated outputs
+output/
+images/generated/
+
+# Julia
+.julia/
+Manifest.toml
+
+# Quarto generated files
+/.quarto/
+/_site/
+*_files/ 
