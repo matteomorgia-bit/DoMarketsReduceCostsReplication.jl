@@ -34,3 +34,12 @@ end
     @test transformed[2] ≈ 12.0 - rho * 10.0
     @test transformed[3] ≈ sqrt(1 - rho^2) * 20.0
 end
+@testset "Rho estimation" begin
+    errors = [2.0, 1.0, 3.0, 1.5]
+    diff = [false, true, false, true]
+
+    rho = estimate_rho(errors, diff)
+
+    expected = (2.0 * 1.0 + 3.0 * 1.5) / (2.0^2 + 3.0^2)
+    @test rho ≈ expected
+end

@@ -3,7 +3,7 @@ module DoMarketsReduceCostsReplication
 using DataFrames
 using StatFiles
 
-export raw_data_dir, load_frw_data, count_plant_epochs, prepare_input_data, prais_transform
+export raw_data_dir, load_frw_data, count_plant_epochs, prepare_input_data, prais_transform, estimate_rho
 
 """
     raw_data_dir()
@@ -81,5 +81,23 @@ function prais_transform(x, diff, rho)
 
     return transformed
 end
+"""
+    estimate_rho(errors, diff)
 
+Estimate the AR(1) coefficient used by the Prais-Winsten transformation.
+This matches the Stata step `reg eps eps_lag if diff==1, nocons`.
+"""
+function estimate_rho(errors, diff)
+    y = Float64[]
+    x = Float64[]
+
+    for i in 2:length(errors)
+        if diff[i]
+            push!(y, errors[i])
+            push!(x, errors[i - 1])
+        end
+    end
+
+    return sum(x .* y) / sum(x .* x)
+end
 end
