@@ -43,3 +43,15 @@ end
     expected = (2.0 * 1.0 + 3.0 * 1.5) / (2.0^2 + 3.0^2)
     @test rho ≈ expected
 end
+@testset "Add Prais columns" begin
+    toy = DataFrame(
+        diff = [false, true],
+        x = [10.0, 12.0],
+    )
+
+    add_prais_columns!(toy, [:x], 0.5)
+
+    @test "prais_x" in names(toy)
+    @test toy.prais_x[1] ≈ sqrt(1 - 0.5^2) * 10.0
+    @test toy.prais_x[2] ≈ 12.0 - 0.5 * 10.0
+end

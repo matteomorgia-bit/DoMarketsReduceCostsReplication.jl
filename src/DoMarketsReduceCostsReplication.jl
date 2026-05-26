@@ -3,8 +3,7 @@ module DoMarketsReduceCostsReplication
 using DataFrames
 using StatFiles
 
-export raw_data_dir, load_frw_data, count_plant_epochs, prepare_input_data, prais_transform, estimate_rho
-
+export raw_data_dir, load_frw_data, count_plant_epochs, prepare_input_data, prais_transform, estimate_rho, add_prais_columns!
 """
     raw_data_dir()
 
@@ -99,5 +98,19 @@ function estimate_rho(errors, diff)
     end
 
     return sum(x .* y) / sum(x .* x)
+end
+"""
+    add_prais_columns!(df, vars, rho)
+
+Add Prais-Winsten transformed versions of `vars` to `df`.
+Each transformed column is named `prais_<variable>`.
+"""
+function add_prais_columns!(df, vars, rho)
+    for var in vars
+        newvar = Symbol("prais_", var)
+        df[!, newvar] = prais_transform(df[!, var], df.diff, rho)
+    end
+
+    return df
 end
 end
