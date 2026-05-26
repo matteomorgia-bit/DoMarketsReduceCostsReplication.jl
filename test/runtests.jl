@@ -8,3 +8,17 @@ using DoMarketsReduceCostsReplication
     @test count_plant_epochs(toy) == 3
     @test endswith(raw_data_dir(), joinpath("data", "raw", "openicpsr", "116286-V1"))
 end
+
+@testset "Input data preparation" begin
+    toy = DataFrame(
+        plant_num2 = [1, 1, 1, 2, 2],
+        yr_data = [1981, 1982, 1984, 1981, 1982],
+        ioudum = [1, 1, 1, 0, 0],
+        hi_nug = [1, 1, 1, 1, 1],
+    )
+
+    prepared = prepare_input_data(toy)
+
+    @test prepared.diff == [false, true, false, false, true]
+    @test prepared.iounug == [0, 0, 0, 0, 0]
+end
