@@ -7,6 +7,7 @@ using DoMarketsReduceCostsReplication
 
     @test count_plant_epochs(toy) == 3
     @test endswith(raw_data_dir(), joinpath("data", "raw", "openicpsr", "116286-V1"))
+    @test run_all isa Function
 end
 
 @testset "Input data preparation" begin

@@ -10,7 +10,9 @@ export raw_data_dir,
     prais_transform,
     estimate_rho,
     add_prais_columns!,
-    add_regulatory_group!
+    add_regulatory_group!,
+    run_all,
+    run
 
 """
     raw_data_dir()
@@ -70,10 +72,6 @@ end
     prais_transform(x, diff, rho)
 
 Apply the Prais-Winsten quasi-difference used in `praisiv2.do`.
-
-For consecutive observations within a plant epoch, the transformed value is
-`x[t] - rho * x[t-1]`. For first observations and gaps, the transformed value is
-`sqrt(1-rho^2) * x[t]`.
 """
 function prais_transform(x, diff, rho)
     transformed = similar(x, Float64)
@@ -128,9 +126,7 @@ end
 """
     add_regulatory_group!(df)
 
-Create the three plant groups used in Figures 1 and 2:
-MUNI plants, IOU plants in non-restructured states, and IOU plants
-in restructured states.
+Create the three plant groups used in Figures 1 and 2.
 """
 function add_regulatory_group!(df)
     df.reg_group = ifelse.(
@@ -141,5 +137,40 @@ function add_regulatory_group!(df)
 
     return df
 end
+
+"""
+    run_all()
+
+Run the main replication scripts.
+
+This assumes the openICPSR replication package is available locally in
+`data/raw/openicpsr/116286-V1`.
+"""
+function run_all()
+    project_root = normpath(joinpath(@__DIR__, ".."))
+
+    scripts = [
+        "01_check_data.jl",
+        "03_gls_basic_tables.jl",
+        "04_figures_year_effects.jl",
+        "05_iv_basic_tables.jl",
+    ]
+
+    for script in scripts
+        script_path = joinpath(project_root, "scripts", script)
+        println()
+        println("Running ", script_path)
+        Base.include(Main, script_path)
+    end
+
+    return nothing
+end
+
+"""
+    run()
+
+Alias for `run_all()`.
+"""
+run() = run_all()
 
 end
