@@ -4,15 +4,15 @@ This repository contains a Julia replication project for Fabrizio, Rose, and Wol
 
 The project is part of Florian Oswald's Computational Economics course.
 
-## Target Outputs
+## Replication Targets
 
-The replication focuses on:
+The project reproduces:
 
 - Figure 1
 - Figure 2
-- Table 3
-- Table 4
-- Table 5
+- Tables 3, 4, and 5
+
+The implementation translates the relevant Stata routines from the original replication package into Julia.
 
 ## Links
 
@@ -20,24 +20,60 @@ The replication focuses on:
 - Replication package: https://www.openicpsr.org/openicpsr/project/116286/version/V1/view
 - Course website: https://floswald.github.io/CompEcon/
 
-## Repository Structure
+## Data
 
-- `src/`: reusable Julia code
-- `scripts/`: scripts used to reproduce figures and tables
-- `data/raw/`: original raw data files, not modified
-- `data/processed/`: cleaned intermediate data
-- `output/figures/`: generated figures
-- `output/tables/`: generated tables
-- `images/`: images included in the report
-- `test/`: tests for the Julia code
-- `report.qmd`: main replication report
+The raw data are not committed to this repository. Download the openICPSR replication package and place the extracted folder here:
 
-## How to Run
+```text
+data/raw/openicpsr/116286-V1/
+```
 
-This project uses Julia. From the repository root, activate the project environment with:
+The scripts expect files such as:
+
+```text
+frw1extract_enf.dta
+frw1extract_f.dta
+inputregs.do
+praisiv2.do
+```
+
+## Install
+
+From the repository root, start Julia and run:
 
 ```julia
 using Pkg
 Pkg.activate(".")
 Pkg.instantiate()
+```
+
+## Run Tests
+
+```bash
+julia --project=. test/runtests.jl
+```
+
+## Run Replication
+
+The package has a single entry point:
+
+```julia
+using DoMarketsReduceCostsReplication
+DoMarketsReduceCostsReplication.run_all()
+```
+
+This runs the data checks, table scripts, and figure scripts.
+
+Individual scripts are also in `scripts/`.
+
+## Report
+
+The main project report is:
+
+```text
+report.qmd
+```
+
+The report is designed to be rendered and deployed with GitHub Pages using the workflow in `.github/workflows/publish.yml`.
+
 
