@@ -1,6 +1,7 @@
 ---
 title: "Replication of Fabrizio, Rose, and Wolfram (2007)"
 author: "Matteo Morgia"
+output-file: index.html
 execute:
   echo: false
   warning: false
