@@ -4,6 +4,7 @@ using DoMarketsReduceCostsReplication
 using LinearAlgebra
 
 const YEARS = 1981:1999
+const PLOT_YEARS = 1982:1999
 const GROUPS = ["MUNI", "IOU non-restructured", "IOU restructured"]
 
 function dummy_matrix(values)
@@ -17,7 +18,7 @@ function group_year_matrix(df)
     names = Tuple{String, Int}[]
 
     for group in GROUPS
-        for year in YEARS
+        for year in PLOT_YEARS
             push!(cols, Float64.((df.reg_group .== group) .& (df.yr_data .== year)))
             push!(names, (group, year))
         end
@@ -26,14 +27,9 @@ function group_year_matrix(df)
     return hcat(cols...), names
 end
 
-function build_figure_x(df, controls)
-    main = Matrix{Float64}(df[:, controls])
-    group_years, group_year_names = group_year_matrix(df)
+function fixed_controls(df)
     plants, _ = dummy_matrix(df.plant_num2)
-    constant = ones(size(df, 1), 1)
-
-    X = hcat(main, group_years, plants, constant)
-    return X, group_year_names, size(main, 2)
+    return plants
 end
 
 function transform_matrix(X, diff, rho)
@@ -46,26 +42,62 @@ function transform_matrix(X, diff, rho)
     return out
 end
 
-function ols_fit(y, X)
-    beta = X \ y
-    residuals = y - X * beta
-    return beta, residuals
+function fit_2sls(y, endog, instrument, exog, fixed, cons)
+    z = hcat(exog, instrument, fixed, cons)
+    first_beta = z \ endog
+    endog_hat = z * first_beta
+
+    xhat = hcat(exog, endog_hat, fixed, cons)
+    beta = xhat \ y
+
+    return beta, first_beta, xhat
 end
 
-function prais_group_year(df, depvar, controls; maxiter = 20, tolerance = 0.005)
-    y = Float64.(df[!, depvar])
-    X, group_year_names, n_controls = build_figure_x(df, controls)
+function structural_eps(y, endog, instrument, exog, fixed, cons, beta, first_beta)
+    z = hcat(exog, instrument, fixed, cons)
+    mhat = z * first_beta
 
-    beta, residuals_raw = ols_fit(y, X)
-    rho = estimate_rho(residuals_raw, df.diff)
+    x_actual = hcat(exog, endog, fixed, cons)
+    que = y - x_actual * beta
+
+    beta_endog = beta[size(exog, 2) + 1]
+    return que - (endog - mhat) .* beta_endog
+end
+
+function prais_iv_group_year(df, depvar, controls; maxiter = 7, tolerance = 0.005)
+    y = Float64.(df[!, depvar])
+    endog = Float64.(df.ln_mwhs)
+    instrument = reshape(Float64.(df.lstsales), :, 1)
+
+    main = Matrix{Float64}(df[:, controls])
+    group_years, group_year_names = group_year_matrix(df)
+    exog = hcat(main, group_years)
+    fixed = fixed_controls(df)
+    cons = ones(size(df, 1), 1)
+
+    beta, first_beta, _ = fit_2sls(y, endog, instrument, exog, fixed, cons)
+    eps = structural_eps(y, endog, instrument, exog, fixed, cons, beta, first_beta)
+    rho = estimate_rho(eps, df.diff)
 
     for iter in 1:maxiter
-        y_prais = prais_transform(y, df.diff, rho)
-        X_prais = transform_matrix(X, df.diff, rho)
+        y_p = prais_transform(y, df.diff, rho)
+        endog_p = prais_transform(endog, df.diff, rho)
+        instrument_p = reshape(prais_transform(vec(instrument), df.diff, rho), :, 1)
+        exog_p = transform_matrix(exog, df.diff, rho)
+        fixed_p = transform_matrix(fixed, df.diff, rho)
+        cons_p = reshape(prais_transform(vec(cons), df.diff, rho), :, 1)
 
-        beta, _ = ols_fit(y_prais, X_prais)
-        residuals_original = y - X * beta
-        new_rho = estimate_rho(residuals_original, df.diff)
+        beta, first_beta, _ = fit_2sls(
+            y_p,
+            endog_p,
+            instrument_p,
+            exog_p,
+            fixed_p,
+            cons_p,
+        )
+
+        eps = structural_eps(y, endog, instrument, exog, fixed, cons, beta, first_beta)
+        new_rho = estimate_rho(eps, df.diff)
 
         if abs(new_rho - rho) < tolerance
             rho = new_rho
@@ -75,49 +107,46 @@ function prais_group_year(df, depvar, controls; maxiter = 20, tolerance = 0.005)
         rho = new_rho
     end
 
-    first_group_year = n_controls + 1
-    last_group_year = n_controls + length(group_year_names)
+    first_group_year = length(controls) + 1
+    last_group_year = length(controls) + length(group_year_names)
     effects = beta[first_group_year:last_group_year]
 
-    out = DataFrame(
-        group = first.(group_year_names),
-        year = last.(group_year_names),
-        effect = effects,
-    )
+    out = DataFrame(group = String[], year = Int[], effect = Float64[])
 
-    # Normalize each group relative to 1981, as in the paper figures.
     for group in GROUPS
-        baseline = only(out.effect[(out.group .== group) .& (out.year .== 1981)])
-        out.effect[out.group .== group] .-= baseline
+        push!(out, (group, 1981, 0.0))
     end
 
-    return out, rho
+    append!(
+        out,
+        DataFrame(
+            group = first.(group_year_names),
+            year = last.(group_year_names),
+            effect = effects,
+        ),
+    )
+
+    return sort(out, [:group, :year]), rho
 end
 
-function plot_effects(effects, title, ylabel, outfile)
-    fig = Figure(size = (980, 620), backgroundcolor = :white)
+function plot_effects(effects, title, outfile; ylimits = nothing)
+    fig = Figure(size = (920, 560), backgroundcolor = :white)
     ax = Axis(
         fig[1, 1],
         title = title,
         xlabel = "Year",
-        ylabel = ylabel,
+        ylabel = "Year fixed effect relative to 1981",
         xticks = 1982:2:1998,
-        xgridcolor = (:gray80, 0.45),
-        ygridcolor = (:gray80, 0.45),
+        xgridcolor = (:gray80, 0.5),
+        ygridcolor = (:gray80, 0.5),
         topspinevisible = false,
         rightspinevisible = false,
     )
 
     colors = Dict(
-        "MUNI" => "#3366AA",
-        "IOU non-restructured" => "#109E73",
-        "IOU restructured" => "#CC5A00",
-    )
-
-    markers = Dict(
-        "MUNI" => :circle,
-        "IOU non-restructured" => :rect,
-        "IOU restructured" => :utriangle,
+        "MUNI" => "#0072B2",
+        "IOU non-restructured" => "#009E73",
+        "IOU restructured" => "#D55E00",
     )
 
     labels = Dict(
@@ -129,27 +158,22 @@ function plot_effects(effects, title, ylabel, outfile)
     for group in GROUPS
         sub = effects[effects.group .== group, :]
         lines!(ax, sub.year, sub.effect, linewidth = 3, color = colors[group], label = labels[group])
-        scatter!(ax, sub.year, sub.effect, marker = markers[group], markersize = 9, color = colors[group])
+        scatter!(ax, sub.year, sub.effect, markersize = 7, color = colors[group])
     end
 
-    hlines!(ax, [0], color = (:gray35, 0.8), linestyle = :dash, linewidth = 1.5)
+    hlines!(ax, [0], color = (:gray35, 0.75), linestyle = :dash, linewidth = 1.5)
     xlims!(ax, 1981, 1999)
 
-    low = minimum(effects.effect)
-    high = maximum(effects.effect)
-    pad = 0.08 * (high - low)
-    ylims!(ax, min(low, 0) - pad, max(high, 0) + pad)
+    if isnothing(ylimits)
+        low = minimum(effects.effect)
+        high = maximum(effects.effect)
+        pad = 0.08 * (high - low)
+        ylims!(ax, min(low, 0) - pad, max(high, 0) + pad)
+    else
+        ylims!(ax, ylimits...)
+    end
 
-    Legend(
-        fig[2, 1],
-        ax,
-        orientation = :horizontal,
-        framevisible = false,
-        tellwidth = false,
-        nbanks = 1,
-    )
-
-    rowgap!(fig.layout, 8)
+    axislegend(ax, position = :lt, framevisible = false)
     save(outfile, fig)
 
     return fig
@@ -161,16 +185,16 @@ mkpath("images")
 df = prepare_input_data(load_frw_data("frw1extract_enf.dta"))
 add_regulatory_group!(df)
 
-emp_effects, rho_emp = prais_group_year(
+emp_effects, rho_emp = prais_iv_group_year(
     df,
     :ln_emp,
-    [:mnc_post87, :anwage_util, :ln_mwhs, :fgddum],
+    [:iouretail, :mnc_post87, :anwage_util, :fgddum],
 )
 
-nf_effects, rho_nf = prais_group_year(
+nf_effects, rho_nf = prais_iv_group_year(
     df,
     :ln_nfexp,
-    [:mnc_post87, :ln_mwhs, :fgddum],
+    [:iouretail, :mnc_post87, :fgddum],
 )
 
 println("Figure 1 rho: ", rho_emp)
@@ -178,16 +202,16 @@ println("Figure 2 rho: ", rho_nf)
 
 fig1 = plot_effects(
     emp_effects,
-    "Labor Input Demand Year Effects",
-    "Year effect relative to 1981",
-    joinpath("output", "figures", "figure1_labor_year_effects.png"),
+    "Labor Input Demand Year-Effects by Regulatory Status\n(Basic GLS-IV Specification)",
+    joinpath("output", "figures", "figure1_labor_year_effects.png");
+    ylimits = (-0.6, 0.2),
 )
 
 fig2 = plot_effects(
     nf_effects,
-    "Nonfuel Expense Input Demand Year Effects",
-    "Year effect relative to 1981",
-    joinpath("output", "figures", "figure2_nonfuel_year_effects.png"),
+    "Nonfuel Expense Input Demand Year-Effects by Regulatory Status\n(Basic GLS-IV Specification)",
+    joinpath("output", "figures", "figure2_nonfuel_year_effects.png");
+    ylimits = (0.0, 0.8),
 )
 
 save(joinpath("images", "figure1_labor_year_effects.png"), fig1)

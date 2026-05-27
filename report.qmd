@@ -46,11 +46,13 @@ In Julia, I implement this procedure directly. I first estimate the model and us
 This was the most useful part of the replication exercise. Instead of treating the Stata output as a black box, the estimator is written step by step in Julia and checked with tests.
 
 ## Figures
-Figure 1 reproduces the labor input year effects. I redrew the figure with clearer labels and a cleaner layout than the original paper.
+The public replication package does not include a separate Stata graphing file for Figures 1 and 2. I therefore reconstruct the figures from the description in the paper: I re-estimate the column 4 GLS-IV specification without `IOU*RESTRUCTURED` and `MUNI*POST1992`, and allow separate year effects for MUNI plants, IOU plants in non-restructured states, and IOU plants in restructured states.
+
+Figure 1 shows the labor input year effects. I redraw the figure with clearer labels and a cleaner layout than the original paper.
 
 ![Figure 1: Labor input year effects](images/figure1_labor_year_effects.png)
 
-Figure 2 reproduces the non-fuel expense year effects using the same style.
+Figure 2 shows the non-fuel expense year effects using the same style.
 
 ![Figure 2: Non-fuel expense year effects](images/figure2_nonfuel_year_effects.png)
 
