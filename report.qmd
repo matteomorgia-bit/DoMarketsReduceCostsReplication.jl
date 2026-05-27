@@ -10,6 +10,7 @@ execute:
 
 ## Overview
 This project replicates selected results from Fabrizio, Rose, and Wolfram (2007), "Do Markets Reduce Costs? Assessing the Impact of Regulatory Restructuring on US Electric Generation Efficiency." The paper studies whether electricity market restructuring reduced input use and costs at U.S. fossil-fuel power plants.
+
 The goal of this project is not only to reproduce the final numbers, but also to organize the replication as a Julia package. The code is split into reusable functions, scripts, generated outputs, and tests.
 
 ## Replication Targets
@@ -31,13 +32,15 @@ data/raw/openicpsr/116286-V1/
 ```
 
 The main files used are:
+
 - `frw1extract_enf.dta` for labor input and non-fuel expenses;
 - `frw1extract_f.dta` for fuel input.
 
 The script `scripts/01_check_data.jl` checks the data before estimation. The estimation sample has 10,079 observations for Tables 3 and 4, and 10,002 observations for Table 5.
 
 ## Method
-The empirical specifications follow the original replication files. The regressions are not simple pooled OLS regressions: they include plant and time controls, and the GLS-IV specifications use a Prais-Winsten transformation to account for serial correlation.
+The empirical specifications follow the original replication files. The regressions are not simple pooled OLS regressions: they include plant and time controls, and the GLS and GLS-IV specifications use a Prais-Winsten transformation to account for serial correlation.
+
 In Julia, I implement this procedure directly. I first estimate the model and use its residuals to estimate the serial correlation parameter, rho. I then apply the Prais-Winsten transformation to the dependent variable and regressors and estimate the transformed model again. In the IV specifications, the same procedure is used after replacing output with its first-stage fitted value.
 
 This was the most useful part of the replication exercise. Instead of treating the Stata output as a black box, the estimator is written step by step in Julia and checked with tests.

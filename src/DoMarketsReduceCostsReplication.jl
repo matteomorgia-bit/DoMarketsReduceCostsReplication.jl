@@ -154,6 +154,7 @@ function run_all()
         "03_gls_basic_tables.jl",
         "04_figures_year_effects.jl",
         "05_iv_basic_tables.jl",
+        "06_write_tables.jl",
     ]
 
     for script in scripts
