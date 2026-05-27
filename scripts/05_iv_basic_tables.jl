@@ -31,23 +31,42 @@ function fit_2sls(y, endog, instrument, exog, fixed, cons)
     first_beta = z \ endog
     endog_hat = z * first_beta
 
-    x_hat = hcat(exog, endog_hat, fixed, cons)
-    second_beta = x_hat \ y
+    xhat = hcat(exog, endog_hat, fixed, cons)
+    beta = xhat \ y
 
-    return second_beta, first_beta
+    return beta, first_beta, xhat, endog_hat
 end
 
-function structural_eps(y, endog, instrument, exog, fixed, cons, second_beta, first_beta)
-    z_original = hcat(exog, instrument, fixed, cons)
-    mhat = z_original * first_beta
+function structural_eps(y, endog, instrument, exog, fixed, cons, beta, first_beta)
+    z = hcat(exog, instrument, fixed, cons)
+    mhat = z * first_beta
 
     x_actual = hcat(exog, endog, fixed, cons)
-    que = y - x_actual * second_beta
+    que = y - x_actual * beta
 
-    endog_position = size(exog, 2) + 1
-    beta_endog = second_beta[endog_position]
+    beta_endog = beta[size(exog, 2) + 1]
 
     return que - (endog - mhat) .* beta_endog
+end
+
+function cluster_vcov_iv(xhat, residuals, cluster)
+    bread = inv(xhat' * xhat)
+    meat = zeros(size(xhat, 2), size(xhat, 2))
+
+    for g in unique(cluster)
+        idx = findall(cluster .== g)
+        xg = xhat[idx, :]
+        ug = residuals[idx]
+        score = xg' * ug
+        meat .+= score * score'
+    end
+
+    n = size(xhat, 1)
+    k = size(xhat, 2)
+    g = length(unique(cluster))
+    correction = (g / (g - 1)) * ((n - 1) / (n - k))
+
+    return correction * bread * meat * bread
 end
 
 function prais_iv(df, depvar, exog_vars; maxiter = 7, tolerance = 0.005)
@@ -58,9 +77,12 @@ function prais_iv(df, depvar, exog_vars; maxiter = 7, tolerance = 0.005)
     fixed = fixed_controls(df)
     cons = ones(size(df, 1), 1)
 
-    beta, first_beta = fit_2sls(y, endog, instrument, exog, fixed, cons)
+    beta, first_beta, _, _ = fit_2sls(y, endog, instrument, exog, fixed, cons)
     eps = structural_eps(y, endog, instrument, exog, fixed, cons, beta, first_beta)
     rho = estimate_rho(eps, df.diff)
+
+    final_xhat = nothing
+    final_structural_residuals = nothing
 
     for iter in 1:maxiter
         y_p = prais_transform(y, df.diff, rho)
@@ -70,7 +92,20 @@ function prais_iv(df, depvar, exog_vars; maxiter = 7, tolerance = 0.005)
         fixed_p = transform_matrix(fixed, df.diff, rho)
         cons_p = reshape(prais_transform(vec(cons), df.diff, rho), :, 1)
 
-        beta, first_beta = fit_2sls(y_p, endog_p, instrument_p, exog_p, fixed_p, cons_p)
+        beta, first_beta, xhat_p, _ = fit_2sls(
+            y_p,
+            endog_p,
+            instrument_p,
+            exog_p,
+            fixed_p,
+            cons_p,
+        )
+
+        x_actual_p = hcat(exog_p, endog_p, fixed_p, cons_p)
+        structural_residuals_p = y_p - x_actual_p * beta
+
+        final_xhat = xhat_p
+        final_structural_residuals = structural_residuals_p
 
         eps = structural_eps(y, endog, instrument, exog, fixed, cons, beta, first_beta)
         new_rho = estimate_rho(eps, df.diff)
@@ -83,7 +118,10 @@ function prais_iv(df, depvar, exog_vars; maxiter = 7, tolerance = 0.005)
         rho = new_rho
     end
 
-    return (; beta, rho)
+    vcov = cluster_vcov_iv(final_xhat, final_structural_residuals, df.stateyr)
+    se = sqrt.(diag(vcov))
+
+    return (; beta, se, rho)
 end
 
 function run_table(df, depvar, specs)
@@ -96,21 +134,21 @@ function run_table(df, depvar, specs)
     return results
 end
 
-function print_spec_result(table, spec, vars, result)
+function print_result(table, spec, vars, result)
     names = vcat(String.(vars), ["ln_mwhs"])
 
     println()
     println(table, " ", spec)
     println("rho: ", result.rho)
 
-    for (name, coef) in zip(names, result.beta[1:length(names)])
-        println(rpad(name, 14), coef)
+    for (name, coef, se) in zip(names, result.beta[1:length(names)], result.se[1:length(names)])
+        println(rpad(name, 14), coef, "    (", se, ")")
     end
 end
 
 function print_table_results(table, results, specs)
     for (spec, vars) in specs
-        print_spec_result(table, spec, vars, results[spec])
+        print_result(table, spec, vars, results[spec])
     end
 end
 
