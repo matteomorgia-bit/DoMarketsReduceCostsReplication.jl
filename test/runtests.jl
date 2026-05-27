@@ -34,6 +34,7 @@ end
     @test transformed[2] ≈ 12.0 - rho * 10.0
     @test transformed[3] ≈ sqrt(1 - rho^2) * 20.0
 end
+
 @testset "Rho estimation" begin
     errors = [2.0, 1.0, 3.0, 1.5]
     diff = [false, true, false, true]
@@ -43,6 +44,7 @@ end
     expected = (2.0 * 1.0 + 3.0 * 1.5) / (2.0^2 + 3.0^2)
     @test rho ≈ expected
 end
+
 @testset "Add Prais columns" begin
     toy = DataFrame(
         diff = [false, true],
@@ -54,4 +56,15 @@ end
     @test "prais_x" in names(toy)
     @test toy.prais_x[1] ≈ sqrt(1 - 0.5^2) * 10.0
     @test toy.prais_x[2] ≈ 12.0 - 0.5 * 10.0
+end
+
+@testset "Regulatory groups" begin
+    toy = DataFrame(
+        mncdum = [1, 0, 0],
+        st_drg = [0, 0, 1],
+    )
+
+    add_regulatory_group!(toy)
+
+    @test toy.reg_group == ["MUNI", "IOU non-restructured", "IOU restructured"]
 end

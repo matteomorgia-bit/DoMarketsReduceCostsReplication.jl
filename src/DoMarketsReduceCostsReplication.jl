@@ -3,7 +3,15 @@ module DoMarketsReduceCostsReplication
 using DataFrames
 using StatFiles
 
-export raw_data_dir, load_frw_data, count_plant_epochs, prepare_input_data, prais_transform, estimate_rho, add_prais_columns!
+export raw_data_dir,
+    load_frw_data,
+    count_plant_epochs,
+    prepare_input_data,
+    prais_transform,
+    estimate_rho,
+    add_prais_columns!,
+    add_regulatory_group!
+
 """
     raw_data_dir()
 
@@ -31,6 +39,7 @@ Count unique plant-epoch identifiers.
 function count_plant_epochs(df)
     return length(unique(df.plant_num2))
 end
+
 """
     prepare_input_data(df)
 
@@ -80,6 +89,7 @@ function prais_transform(x, diff, rho)
 
     return transformed
 end
+
 """
     estimate_rho(errors, diff)
 
@@ -99,6 +109,7 @@ function estimate_rho(errors, diff)
 
     return sum(x .* y) / sum(x .* x)
 end
+
 """
     add_prais_columns!(df, vars, rho)
 
@@ -113,4 +124,22 @@ function add_prais_columns!(df, vars, rho)
 
     return df
 end
+
+"""
+    add_regulatory_group!(df)
+
+Create the three plant groups used in Figures 1 and 2:
+MUNI plants, IOU plants in non-restructured states, and IOU plants
+in restructured states.
+"""
+function add_regulatory_group!(df)
+    df.reg_group = ifelse.(
+        df.mncdum .== 1,
+        "MUNI",
+        ifelse.(df.st_drg .== 1, "IOU restructured", "IOU non-restructured"),
+    )
+
+    return df
+end
+
 end
