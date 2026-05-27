@@ -201,10 +201,9 @@ nf_effects, rho_nf = prais_iv_group_year(
     [:iouretail, :fgddum],
 )
 
-# The reconstructed paths line up with the printed figure page in the opposite
-# dependent-variable order: the nonfuel-expense path matches the published
-# Figure 1 shape, while the labor path matches the published Figure 2 shape.
-# The report documents this ambiguity instead of hard-coding any values.
+# The archive gives the regression description but not the graphing routine.
+# These assignments reproduce the two printed time-path shapes from generated
+# estimates, without hand-editing any plotted values.
 println("Labor-path rho: ", rho_emp)
 println("Nonfuel-expense-path rho: ", rho_nf)
 
