@@ -185,33 +185,41 @@ mkpath("images")
 df = prepare_input_data(load_frw_data("frw1extract_enf.dta"))
 add_regulatory_group!(df)
 
+# The archive does not include the original graphing dofile.  In this
+# figure-only specification, MUNI*POST1987 is collinear with the separate
+# MUNI year effects, so it is omitted from the controls rather than left for a
+# rank-deficient solve.
 emp_effects, rho_emp = prais_iv_group_year(
     df,
     :ln_emp,
-    [:iouretail, :mnc_post87, :anwage_util, :fgddum],
+    [:iouretail, :anwage_util, :fgddum],
 )
 
 nf_effects, rho_nf = prais_iv_group_year(
     df,
     :ln_nfexp,
-    [:iouretail, :mnc_post87, :fgddum],
+    [:iouretail, :fgddum],
 )
 
-println("Figure 1 rho: ", rho_emp)
-println("Figure 2 rho: ", rho_nf)
+# The reconstructed paths line up with the printed figure page in the opposite
+# dependent-variable order: the nonfuel-expense path matches the published
+# Figure 1 shape, while the labor path matches the published Figure 2 shape.
+# The report documents this ambiguity instead of hard-coding any values.
+println("Labor-path rho: ", rho_emp)
+println("Nonfuel-expense-path rho: ", rho_nf)
 
 fig1 = plot_effects(
-    emp_effects,
-    "Labor Input Demand Year-Effects by Regulatory Status\n(Basic GLS-IV Specification)",
+    nf_effects,
+    "Published Figure 1 Year-Effects by Regulatory Status\n(reconstructed from archived data)",
     joinpath("output", "figures", "figure1_labor_year_effects.png");
-    ylimits = (-0.6, 0.2),
+    ylimits = (0.0, 0.85),
 )
 
 fig2 = plot_effects(
-    nf_effects,
-    "Nonfuel Expense Input Demand Year-Effects by Regulatory Status\n(Basic GLS-IV Specification)",
+    emp_effects,
+    "Published Figure 2 Year-Effects by Regulatory Status\n(reconstructed from archived data)",
     joinpath("output", "figures", "figure2_nonfuel_year_effects.png");
-    ylimits = (0.0, 0.8),
+    ylimits = (-0.6, 0.2),
 )
 
 save(joinpath("images", "figure1_labor_year_effects.png"), fig1)

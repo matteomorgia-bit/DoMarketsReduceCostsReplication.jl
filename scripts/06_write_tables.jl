@@ -174,10 +174,23 @@ function fmt(x)
     return @sprintf("%.3f", x)
 end
 
+function stars(beta, se)
+    t = abs(beta / se)
+    if t >= 2.576
+        return "***"
+    elseif t >= 1.960
+        return "**"
+    elseif t >= 1.645
+        return "*"
+    else
+        return ""
+    end
+end
+
 function cell(result, var)
     idx = findfirst(==(var), result.vars)
     isnothing(idx) && return ""
-    return "$(fmt(result.beta[idx]))<br>($(fmt(result.se[idx])))"
+    return "$(fmt(result.beta[idx]))$(stars(result.beta[idx], result.se[idx]))<br>($(fmt(result.se[idx])))"
 end
 
 function rho_cell(result)
@@ -198,6 +211,8 @@ function write_markdown_table(path, title, rows, results)
 
         rhos = [rho_cell(results[col]) for col in keys(results)]
         println(io, "| rho | ", join(rhos, " | "), " |")
+        println(io)
+        println(io, "Notes: cluster-robust standard errors are in parentheses. Stars are computed from absolute t-ratios: *** 1 percent, ** 5 percent, * 10 percent. Very small last-digit differences from the printed article can reflect rounding/truncation in the PDF/Stata output.")
     end
 end
 
