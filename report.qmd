@@ -57,11 +57,19 @@ This section will describe how the original Stata replication code was translate
 
 ## Figure 1
 
-To be added.
+## Figure 1
+
+Figure 1 plots labor input demand year effects by regulatory status. The estimates are normalized relative to 1981, following the paper.
+
+![](images/figure1_labor_year_effects.png)
 
 ## Figure 2
 
-To be added.
+## Figure 2
+
+Figure 2 plots nonfuel expense input demand year effects by regulatory status. The estimates are normalized relative to 1981, following the paper.
+
+![](images/figure2_nonfuel_year_effects.png)
 
 ## Tables 3, 4, And 5
 
