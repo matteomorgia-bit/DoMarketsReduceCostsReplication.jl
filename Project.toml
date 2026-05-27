@@ -1,16 +1,12 @@
 name = "DoMarketsReduceCostsReplication"
-uuid = "11111111-1111-1111-1111-111111111111"
+uuid = "d4264c91-8ffe-4849-8d08-73081f16474c"
 authors = ["Matteo"]
 version = "0.1.0"
 
 [deps]
-CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-FixedEffectModels = "9d5cd8c9-2029-5cab-9928-427838db53e3"
-RegressionTables = "d519eb52-b820-54da-95a6-98e1306fdade"
 StatFiles = "1463e38c-9381-5320-bcd4-4134955f093a"
-StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
