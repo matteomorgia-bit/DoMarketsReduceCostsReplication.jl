@@ -95,19 +95,29 @@ function prais_group_year(df, depvar, controls; maxiter = 20, tolerance = 0.005)
 end
 
 function plot_effects(effects, title, ylabel, outfile)
-    fig = Figure(size = (900, 540))
+    fig = Figure(size = (980, 620), backgroundcolor = :white)
     ax = Axis(
         fig[1, 1],
         title = title,
         xlabel = "Year",
         ylabel = ylabel,
         xticks = 1982:2:1998,
+        xgridcolor = (:gray80, 0.45),
+        ygridcolor = (:gray80, 0.45),
+        topspinevisible = false,
+        rightspinevisible = false,
     )
 
     colors = Dict(
-        "MUNI" => "#0072B2",
-        "IOU non-restructured" => "#009E73",
-        "IOU restructured" => "#D55E00",
+        "MUNI" => "#3366AA",
+        "IOU non-restructured" => "#109E73",
+        "IOU restructured" => "#CC5A00",
+    )
+
+    markers = Dict(
+        "MUNI" => :circle,
+        "IOU non-restructured" => :rect,
+        "IOU restructured" => :utriangle,
     )
 
     labels = Dict(
@@ -119,11 +129,27 @@ function plot_effects(effects, title, ylabel, outfile)
     for group in GROUPS
         sub = effects[effects.group .== group, :]
         lines!(ax, sub.year, sub.effect, linewidth = 3, color = colors[group], label = labels[group])
-        scatter!(ax, sub.year, sub.effect, markersize = 8, color = colors[group])
+        scatter!(ax, sub.year, sub.effect, marker = markers[group], markersize = 9, color = colors[group])
     end
 
-    hlines!(ax, [0], color = :gray50, linestyle = :dash)
-    axislegend(ax, position = :lt, framevisible = false)
+    hlines!(ax, [0], color = (:gray35, 0.8), linestyle = :dash, linewidth = 1.5)
+    xlims!(ax, 1981, 1999)
+
+    low = minimum(effects.effect)
+    high = maximum(effects.effect)
+    pad = 0.08 * (high - low)
+    ylims!(ax, min(low, 0) - pad, max(high, 0) + pad)
+
+    Legend(
+        fig[2, 1],
+        ax,
+        orientation = :horizontal,
+        framevisible = false,
+        tellwidth = false,
+        nbanks = 1,
+    )
+
+    rowgap!(fig.layout, 8)
     save(outfile, fig)
 
     return fig
@@ -150,32 +176,21 @@ nf_effects, rho_nf = prais_group_year(
 println("Figure 1 rho: ", rho_emp)
 println("Figure 2 rho: ", rho_nf)
 
-plot_effects(
+fig1 = plot_effects(
     emp_effects,
     "Labor Input Demand Year Effects",
     "Year effect relative to 1981",
     joinpath("output", "figures", "figure1_labor_year_effects.png"),
 )
 
-plot_effects(
+fig2 = plot_effects(
     nf_effects,
     "Nonfuel Expense Input Demand Year Effects",
     "Year effect relative to 1981",
     joinpath("output", "figures", "figure2_nonfuel_year_effects.png"),
 )
 
-save(joinpath("images", "figure1_labor_year_effects.png"), plot_effects(
-    emp_effects,
-    "Labor Input Demand Year Effects",
-    "Year effect relative to 1981",
-    joinpath("output", "figures", "figure1_labor_year_effects.png"),
-))
-
-save(joinpath("images", "figure2_nonfuel_year_effects.png"), plot_effects(
-    nf_effects,
-    "Nonfuel Expense Input Demand Year Effects",
-    "Year effect relative to 1981",
-    joinpath("output", "figures", "figure2_nonfuel_year_effects.png"),
-))
+save(joinpath("images", "figure1_labor_year_effects.png"), fig1)
+save(joinpath("images", "figure2_nonfuel_year_effects.png"), fig2)
 
 println("Saved figures to output/figures and images.")
