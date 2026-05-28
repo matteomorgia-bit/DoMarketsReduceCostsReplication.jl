@@ -44,12 +44,14 @@ The empirical specifications follow the original replication files. The regressi
 In Julia, I implement this procedure directly. I first estimate the model and use its residuals to estimate the serial correlation parameter, rho. I then apply the Prais-Winsten transformation to the dependent variable and regressors and estimate the transformed model again. In the IV specifications, the same procedure is used after replacing output with its first-stage fitted value.
 
 This was the most useful part of the replication exercise. 
+
 ## Figures
 The public replication package does not include a separate Stata graphing file for Figures 1 and 2. I therefore reconstruct the figures from the description in the paper: I re-estimate the column 4 GLS-IV specification without `IOU*RESTRUCTURED` and `MUNI*POST1992`, and allow separate year effects for MUNI plants, IOU plants in non-restructured states, and IOU plants in restructured states.
 
 The reconstruction is based on two passages in the paper. First, the authors describe Figures 1 and 2 as nonparametric time paths for IOU and MUNI plant efficiency. Second, they explain that the plotted objects are the estimated year effects for each plant group after allowing the three regulatory groups to have separate year profiles. In the Julia code, I implement this by replacing the common year dummies with group-by-year dummies for MUNI plants, IOU plants in states that never restructure, and IOU plants in states that eventually restructure.
 
-One replication detail is important here. Once separate MUNI year effects are included, `MUNI*POST1987` is collinear with those year effects, so I omit it in the figure-only reconstruction. Since the original graphing routine is not available, the figures below should be read as a code-generated reconstruction of the two published time paths. 
+One replication detail is important here. Once separate MUNI year effects are included, `MUNI*POST1987` is collinear with those year effects, so I omit it in the figure-only reconstruction. Since the original graphing routine is not available, the figures below should be read as a code-generated reconstruction of the two published time paths.
+
 Figure 1 is the first published year-effect figure, redrawn with clearer labels and a cleaner layout.
 
 ![Figure 1: published year-effect path](images/figure1_labor_year_effects.png)
